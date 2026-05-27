@@ -86,9 +86,9 @@ def invite(code):
 @app.route("/recipe/<int:recipe_id>")
 @require_access
 def recipe(recipe_id):
-    db = get_db()
-    item = db.execute("SELECT * FROM recipes WHERE id=?", (recipe_id,)).fetchone()
-    db.close()
+  response = supabase.table("recipes").select("*").eq("id", recipe_id).execute()
+
+item = response.data[0] if response.data else None
     if not item:
         return redirect(url_for("index"))
     return render_template("recipe.html", recipe=item)
@@ -97,9 +97,15 @@ def recipe(recipe_id):
 @app.route("/random")
 @require_access
 def random_recipe():
-    db = get_db()
-    item = db.execute("SELECT id FROM recipes ORDER BY RANDOM() LIMIT 1").fetchone()
-    db.close()
+   response = supabase.table("recipes").select("id").execute()
+
+items = response.data
+
+if items:
+    import random
+    item = random.choice(items)
+else:
+    item = None
     if not item:
         flash("Рецептів ще немає 😭")
         return redirect(url_for("index"))
@@ -120,9 +126,9 @@ def admin_login():
 @app.route("/admin/panel")
 @require_admin
 def admin_panel():
-    db = get_db()
-    recipes = db.execute("SELECT * FROM recipes ORDER BY id DESC").fetchall()
-    db.close()
+   response = supabase.table("recipes").select("*").order("id", desc=True).execute()
+
+recipes = response.data
     return render_template("admin_panel.html", recipes=recipes)
 
 
@@ -142,13 +148,14 @@ def admin_add():
             image_name = secure_filename(image.filename)
             image.save(os.path.join(app.config["UPLOAD_FOLDER"], image_name))
 
-        db = get_db()
-        db.execute("""
-            INSERT INTO recipes (title, category, calories, ingredients, steps, image)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (title, category, calories, ingredients, steps, image_name))
-        db.commit()
-        db.close()
+        supabase.table("recipes").insert({
+    "title": title,
+    "category": category,
+    "calories": calories,
+    "ingredients": ingredients,
+    "steps": steps,
+    "image": image_name
+}).execute()
 
         flash("Рецепт додано ✅")
         return redirect(url_for("admin_panel"))
@@ -159,11 +166,11 @@ def admin_add():
 @app.route("/admin/edit/<int:recipe_id>", methods=["GET", "POST"])
 @require_admin
 def admin_edit(recipe_id):
-    db = get_db()
-    recipe = db.execute("SELECT * FROM recipes WHERE id=?", (recipe_id,)).fetchone()
+   response = supabase.table("recipes").select("*").eq("id", recipe_id).execute()
+
+recipe = response.data[0] if response.data else None
 
     if not recipe:
-        db.close()
         return redirect(url_for("admin_panel"))
 
     if request.method == "POST":
@@ -199,10 +206,7 @@ def admin_edit(recipe_id):
 @app.route("/admin/delete/<int:recipe_id>", methods=["POST"])
 @require_admin
 def admin_delete(recipe_id):
-    db = get_db()
-    db.execute("DELETE FROM recipes WHERE id=?", (recipe_id,))
-    db.commit()
-    db.close()
+    supabase.table("recipes").delete().eq("id", recipe_id).execute()
     flash("Рецепт видалено ❌")
     return redirect(url_for("admin_panel"))
 
