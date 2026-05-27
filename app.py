@@ -1,0 +1,240 @@
+
+import os
+import sqlite3
+from functools import wraps
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "change-this-secret-key")
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+INVITE_CODE = os.getenv("INVITE_CODE", "secretcake2026")
+
+DB_NAME = "recipes.db"
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    db = get_db()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            calories TEXT NOT NULL,
+            ingredients TEXT NOT NULL,
+            steps TEXT NOT NULL,
+            image TEXT
+        )
+    """)
+    db.commit()
+    db.close()
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def require_access(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get("access_granted") or session.get("admin"):
+            return func(*args, **kwargs)
+        return render_template("locked.html", invite_code=INVITE_CODE)
+    return wrapper
+
+
+def require_admin(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get("admin"):
+            return func(*args, **kwargs)
+        return redirect(url_for("admin_login"))
+    return wrapper
+
+
+@app.route("/")
+@require_access
+def index():
+    q = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    calories = request.args.get("calories", "").strip()
+
+    sql = "SELECT * FROM recipes WHERE 1=1"
+    params = []
+
+    if q:
+        sql += " AND (LOWER(title) LIKE LOWER(?) OR LOWER(ingredients) LIKE LOWER(?) OR LOWER(steps) LIKE LOWER(?))"
+        params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+
+    if category:
+        sql += " AND category=?"
+        params.append(category)
+
+    if calories:
+        sql += " AND calories=?"
+        params.append(calories)
+
+    sql += " ORDER BY id DESC"
+
+    db = get_db()
+    recipes = db.execute(sql, params).fetchall()
+    db.close()
+
+    return render_template("index.html", recipes=recipes, q=q, category=category, calories=calories)
+
+
+@app.route("/invite/<code>")
+def invite(code):
+    if code == INVITE_CODE:
+        session["access_granted"] = True
+        flash("Доступ відкрито ✨")
+        return redirect(url_for("index"))
+    return render_template("locked.html", invite_code=INVITE_CODE, error="Невірне посилання 😭")
+
+
+@app.route("/recipe/<int:recipe_id>")
+@require_access
+def recipe(recipe_id):
+    db = get_db()
+    item = db.execute("SELECT * FROM recipes WHERE id=?", (recipe_id,)).fetchone()
+    db.close()
+    if not item:
+        return redirect(url_for("index"))
+    return render_template("recipe.html", recipe=item)
+
+
+@app.route("/random")
+@require_access
+def random_recipe():
+    db = get_db()
+    item = db.execute("SELECT id FROM recipes ORDER BY RANDOM() LIMIT 1").fetchone()
+    db.close()
+    if not item:
+        flash("Рецептів ще немає 😭")
+        return redirect(url_for("index"))
+    return redirect(url_for("recipe", recipe_id=item["id"]))
+
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        if request.form.get("password", "") == ADMIN_PASSWORD:
+            session["admin"] = True
+            session["access_granted"] = True
+            return redirect(url_for("admin_panel"))
+        flash("Невірний пароль 😭")
+    return render_template("admin_login.html")
+
+
+@app.route("/admin/panel")
+@require_admin
+def admin_panel():
+    db = get_db()
+    recipes = db.execute("SELECT * FROM recipes ORDER BY id DESC").fetchall()
+    db.close()
+    return render_template("admin_panel.html", recipes=recipes)
+
+
+@app.route("/admin/add", methods=["GET", "POST"])
+@require_admin
+def admin_add():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        category = request.form.get("category", "").strip()
+        calories = request.form.get("calories", "").strip()
+        ingredients = request.form.get("ingredients", "").strip()
+        steps = request.form.get("steps", "").strip()
+
+        image_name = None
+        image = request.files.get("image")
+        if image and image.filename and allowed_file(image.filename):
+            image_name = secure_filename(image.filename)
+            image.save(os.path.join(app.config["UPLOAD_FOLDER"], image_name))
+
+        db = get_db()
+        db.execute("""
+            INSERT INTO recipes (title, category, calories, ingredients, steps, image)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (title, category, calories, ingredients, steps, image_name))
+        db.commit()
+        db.close()
+
+        flash("Рецепт додано ✅")
+        return redirect(url_for("admin_panel"))
+
+    return render_template("admin_form.html", recipe=None)
+
+
+@app.route("/admin/edit/<int:recipe_id>", methods=["GET", "POST"])
+@require_admin
+def admin_edit(recipe_id):
+    db = get_db()
+    recipe = db.execute("SELECT * FROM recipes WHERE id=?", (recipe_id,)).fetchone()
+
+    if not recipe:
+        db.close()
+        return redirect(url_for("admin_panel"))
+
+    if request.method == "POST":
+        image_name = recipe["image"]
+        image = request.files.get("image")
+        if image and image.filename and allowed_file(image.filename):
+            image_name = secure_filename(image.filename)
+            image.save(os.path.join(app.config["UPLOAD_FOLDER"], image_name))
+
+        db.execute("""
+            UPDATE recipes
+            SET title=?, category=?, calories=?, ingredients=?, steps=?, image=?
+            WHERE id=?
+        """, (
+            request.form.get("title", "").strip(),
+            request.form.get("category", "").strip(),
+            request.form.get("calories", "").strip(),
+            request.form.get("ingredients", "").strip(),
+            request.form.get("steps", "").strip(),
+            image_name,
+            recipe_id
+        ))
+        db.commit()
+        db.close()
+
+        flash("Рецепт оновлено ✅")
+        return redirect(url_for("admin_panel"))
+
+    db.close()
+    return render_template("admin_form.html", recipe=recipe)
+
+
+@app.route("/admin/delete/<int:recipe_id>", methods=["POST"])
+@require_admin
+def admin_delete(recipe_id):
+    db = get_db()
+    db.execute("DELETE FROM recipes WHERE id=?", (recipe_id,))
+    db.commit()
+    db.close()
+    flash("Рецепт видалено ❌")
+    return redirect(url_for("admin_panel"))
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
+
+
+init_db()
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
