@@ -63,15 +63,13 @@ def index():
         params.append(category)
 
     if calories:
-        sql += " AND calories=?"
-        params.append(calories)
+    sql += " AND calories=?"
+    params.append(calories)
 
-    sql += " ORDER BY id DESC"
+response = supabase.table("recipes").select("*").execute()
+recipes = response.data
 
-    response = supabase.table("recipes").select("*").execute()
-    recipes = response.data
-
-    return render_template("index.html", recipes=recipes, q=q, category=category, calories=calories)
+return render_template("index.html", recipes=recipes, q=q, category=category, calories=calories)
 @app.route("/invite/<code>")
 def invite(code):
     if code == INVITE_CODE:
