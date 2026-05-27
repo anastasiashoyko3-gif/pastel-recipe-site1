@@ -4,7 +4,7 @@
 {% block content %}
 <article class="recipe-page">
     {% if recipe['image'] %}
-        <img class="recipe-image" src="{{ url_for('static', filename='uploads/' + recipe['image']) }}" alt="{{ recipe['title'] }}">
+      <img src="{{ recipe['image'] }}" alt="{{ recipe['title'] }}">
     {% else %}
         <div class="recipe-image placeholder big">🧁</div>
     {% endif %}
