@@ -1,44 +1,25 @@
 
 import os
-import sqlite3
+from supabase import create_client
 from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-this-secret-key")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 INVITE_CODE = os.getenv("INVITE_CODE", "secretcake2026")
 
-DB_NAME = "recipes.db"
 UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
-def get_db():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    db = get_db()
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS recipes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            category TEXT NOT NULL,
-            calories TEXT NOT NULL,
-            ingredients TEXT NOT NULL,
-            steps TEXT NOT NULL,
-            image TEXT
-        )
-    """)
-    db.commit()
-    db.close()
 
 
 def allowed_file(filename):
