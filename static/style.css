@@ -142,6 +142,8 @@ input, select, textarea {
     align-items: center;
     justify-content: center;
     font-size: 64px;
+    overflow: hidden;
+    border-radius: 28px 28px 0 0;
 }
 
 .placeholder.big { height: 420px; }
