@@ -214,7 +214,6 @@ def logout():
     return redirect(url_for("index"))
 
 
-init_db()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
