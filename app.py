@@ -68,9 +68,8 @@ def index():
 
     sql += " ORDER BY id DESC"
 
-    db = get_db()
-    recipes = db.execute(sql, params).fetchall()
-    db.close()
+  response = supabase.table("recipes").select("*").execute()
+recipes = response.data
 
     return render_template("index.html", recipes=recipes, q=q, category=category, calories=calories)
 
