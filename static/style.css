@@ -262,3 +262,39 @@ code {
     display: block;
     border-radius: 28px 28px 0 0;
 }
+.card img,
+.recipe-preview {
+    width: 100% !important;
+    height: 210px !important;
+    object-fit: cover !important;
+    display: block !important;
+    max-width: 100% !important;
+}
+
+.recipe-image {
+    width: 100% !important;
+    max-width: 520px !important;
+    height: auto !important;
+    max-height: 520px !important;
+    object-fit: cover !important;
+    border-radius: 28px !important;
+    display: block !important;
+}
+
+.recipe-page {
+    display: grid !important;
+    grid-template-columns: 0.9fr 1fr !important;
+    gap: 28px !important;
+    align-items: start !important;
+}
+
+@media (max-width: 850px) {
+    .recipe-page {
+        grid-template-columns: 1fr !important;
+    }
+
+    .recipe-image {
+        max-width: 100% !important;
+        max-height: 360px !important;
+    }
+}
