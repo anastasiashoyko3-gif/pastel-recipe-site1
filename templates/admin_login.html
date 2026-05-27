@@ -1,0 +1,13 @@
+
+{% extends "base.html" %}
+{% block title %}Адмінка{% endblock %}
+{% block content %}
+<section class="auth">
+    <h1>⚙️ Адмінка</h1>
+    <p>Введи пароль, щоб керувати рецептами.</p>
+    <form method="post" class="admin-form small">
+        <input type="password" name="password" placeholder="Пароль" required>
+        <button type="submit">Увійти</button>
+    </form>
+</section>
+{% endblock %}

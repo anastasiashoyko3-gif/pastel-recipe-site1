@@ -1,0 +1,28 @@
+
+{% extends "base.html" %}
+{% block title %}{{ recipe['title'] }}{% endblock %}
+{% block content %}
+<article class="recipe-page">
+    {% if recipe['image'] %}
+        <img class="recipe-image" src="{{ url_for('static', filename='uploads/' + recipe['image']) }}" alt="{{ recipe['title'] }}">
+    {% else %}
+        <div class="recipe-image placeholder big">🧁</div>
+    {% endif %}
+    <div class="recipe-content">
+        <div class="chips">
+            <span>{{ recipe['category'] }}</span>
+            <span>≈{{ recipe['calories'] }} ккал</span>
+        </div>
+        <h1>{{ recipe['title'] }}</h1>
+        <section>
+            <h2>Інгредієнти</h2>
+            <p class="multiline">{{ recipe['ingredients'] }}</p>
+        </section>
+        <section>
+            <h2>Приготування</h2>
+            <p class="multiline">{{ recipe['steps'] }}</p>
+        </section>
+        <a class="button soft" href="{{ url_for('index') }}">← Назад до рецептів</a>
+    </div>
+</article>
+{% endblock %}

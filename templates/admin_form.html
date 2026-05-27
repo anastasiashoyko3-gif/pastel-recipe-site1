@@ -1,0 +1,36 @@
+
+{% extends "base.html" %}
+{% block title %}{% if recipe %}Редагувати{% else %}Додати{% endif %} рецепт{% endblock %}
+{% block content %}
+<section class="form-page">
+    <p class="tag">адмінка</p>
+    <h1>{% if recipe %}Редагувати рецепт{% else %}Додати рецепт{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data" class="admin-form">
+        <label>Назва рецепта</label>
+        <input type="text" name="title" required value="{{ recipe['title'] if recipe else '' }}">
+
+        <label>Категорія</label>
+        <select name="category" required>
+            <option value="Солодке" {% if recipe and recipe['category'] == "Солодке" %}selected{% endif %}>🍰 Солодке</option>
+            <option value="Солоне" {% if recipe and recipe['category'] == "Солоне" %}selected{% endif %}>🍝 Солоне</option>
+        </select>
+
+        <label>Калорійність</label>
+        <select name="calories" required>
+            <option value="300" {% if recipe and recipe['calories'] == "300" %}selected{% endif %}>≈300 калорій</option>
+            <option value="600" {% if recipe and recipe['calories'] == "600" %}selected{% endif %}>≈600 калорій</option>
+        </select>
+
+        <label>Інгредієнти</label>
+        <textarea name="ingredients" rows="7" required>{{ recipe['ingredients'] if recipe else '' }}</textarea>
+
+        <label>Приготування</label>
+        <textarea name="steps" rows="9" required>{{ recipe['steps'] if recipe else '' }}</textarea>
+
+        <label>Фото</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp">
+
+        <button type="submit">Зберегти</button>
+    </form>
+</section>
+{% endblock %}

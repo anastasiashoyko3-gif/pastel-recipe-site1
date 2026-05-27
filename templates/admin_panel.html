@@ -1,0 +1,37 @@
+
+{% extends "base.html" %}
+{% block title %}Панель адміна{% endblock %}
+{% block content %}
+<section class="admin-head">
+    <div>
+        <p class="tag">адмін-панель</p>
+        <h1>Керування рецептами</h1>
+    </div>
+    <a class="button" href="{{ url_for('admin_add') }}">➕ Додати рецепт</a>
+</section>
+
+{% if recipes %}
+<div class="admin-list">
+    {% for recipe in recipes %}
+    <div class="admin-item">
+        <div>
+            <strong>{{ recipe['title'] }}</strong>
+            <p>{{ recipe['category'] }} · ≈{{ recipe['calories'] }} ккал</p>
+        </div>
+        <div class="admin-actions">
+            <a href="{{ url_for('recipe', recipe_id=recipe['id']) }}">👀</a>
+            <a href="{{ url_for('admin_edit', recipe_id=recipe['id']) }}">✏️</a>
+            <form method="post" action="{{ url_for('admin_delete', recipe_id=recipe['id']) }}">
+                <button type="submit" onclick="return confirm('Видалити рецепт?')">❌</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <h2>Рецептів ще немає</h2>
+    <p>Додай перший рецепт через кнопку зверху.</p>
+</div>
+{% endif %}
+{% endblock %}

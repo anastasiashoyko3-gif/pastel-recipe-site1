@@ -1,27 +1,13 @@
+
 {% extends "base.html" %}
-
 {% block title %}Доступ закритий{% endblock %}
-
 {% block content %}
 <section class="locked">
     <h1>🔐 Доступ тільки по запрошенню</h1>
-
-    <p>
-        Цей сайт закритий. Відкрити його можна тільки по спеціальному посиланню.
-    </p>
-
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
-
-    <p class="hint">
-        Формат посилання:
-    </p>
-
+    <p>Цей сайт закритий. Відкрити його можна тільки по спеціальному посиланню.</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <p class="hint">Формат посилання:</p>
     <code>/invite/{{ invite_code }}</code>
-
-    <a class="button" href="{{ url_for('admin_login') }}">
-        Я адмін
-    </a>
+    <a class="button" href="{{ url_for('admin_login') }}">Я адмін</a>
 </section>
 {% endblock %}

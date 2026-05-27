@@ -1,0 +1,59 @@
+
+{% extends "base.html" %}
+{% block title %}Рецепти{% endblock %}
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="tag">твій ніжний cookbook</p>
+        <h1>Рецепти в пастельному стилі</h1>
+        <p>Обирай солодке або солоне, фільтруй по калоріях і шукай ідеї для себе.</p>
+    </div>
+    <div class="hero-card">
+        <span>🍓</span>
+        <strong>Сьогодні щось смачненьке?</strong>
+        <a href="{{ url_for('random_recipe') }}">🎲 Випадковий рецепт</a>
+    </div>
+</section>
+
+<form class="filters" method="get">
+    <input type="text" name="q" placeholder="Пошук: банан, курка, сир..." value="{{ q }}">
+    <select name="category">
+        <option value="">Всі категорії</option>
+        <option value="Солодке" {% if category == "Солодке" %}selected{% endif %}>🍰 Солодке</option>
+        <option value="Солоне" {% if category == "Солоне" %}selected{% endif %}>🍝 Солоне</option>
+    </select>
+    <select name="calories">
+        <option value="">Будь-які калорії</option>
+        <option value="300" {% if calories == "300" %}selected{% endif %}>≈300 калорій</option>
+        <option value="600" {% if calories == "600" %}selected{% endif %}>≈600 калорій</option>
+    </select>
+    <button type="submit">Знайти</button>
+</form>
+
+{% if recipes %}
+<section class="grid">
+    {% for recipe in recipes %}
+    <a class="card" href="{{ url_for('recipe', recipe_id=recipe['id']) }}">
+        {% if recipe['image'] %}
+            <img src="{{ url_for('static', filename='uploads/' + recipe['image']) }}" alt="{{ recipe['title'] }}">
+        {% else %}
+            <div class="placeholder">🧁</div>
+        {% endif %}
+        <div class="card-body">
+            <div class="chips">
+                <span>{{ recipe['category'] }}</span>
+                <span>≈{{ recipe['calories'] }} ккал</span>
+            </div>
+            <h3>{{ recipe['title'] }}</h3>
+            <p>Натисни, щоб відкрити повний рецепт</p>
+        </div>
+    </a>
+    {% endfor %}
+</section>
+{% else %}
+<div class="empty">
+    <h2>Поки рецептів немає 😭</h2>
+    <p>Зайди в адмінку і додай перший рецепт.</p>
+</div>
+{% endif %}
+{% endblock %}
