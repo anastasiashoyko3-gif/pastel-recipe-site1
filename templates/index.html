@@ -36,7 +36,7 @@
     {% for recipe in recipes %}
     <a class="card" href="{{ url_for('recipe', recipe_id=recipe['id']) }}">
         {% if recipe['image'] %}
-           <img src="{{ recipe['image'] }}" alt="{{ recipe['title'] }}">
+           <img class="recipe-preview" src="{{ recipe['image'] }}" alt="{{ recipe['title'] }}">
         {% else %}
             <div class="placeholder">🧁</div>
         {% endif %}
